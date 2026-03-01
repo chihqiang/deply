@@ -130,7 +130,6 @@ func ParseSSHURL(raw string) (*Config, error) {
 			Password: password,
 			Host:     host,
 			Port:     port,
-			Timeout:  10 * time.Second,
 		}, nil
 	}
 
@@ -147,9 +146,8 @@ func ParseSSHURL(raw string) (*Config, error) {
 
 	user = os.Getenv("USER")
 	return &Config{
-		User:    user,
-		Host:    host,
-		Port:    port,
-		Timeout: 10 * time.Second,
+		User: user,
+		Host: host,
+		Port: port,
 	}, nil
 }
