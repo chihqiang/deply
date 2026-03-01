@@ -34,13 +34,11 @@ func History() *cli.Command {
 					logx.Warn("[%s] Failed to open SSH connection: %v", config.Host, err)
 					continue
 				}
-				defer sshClient.Close()
 				sftpClient, err := sshx.OpenSftp(sshClient)
 				if err != nil {
 					logx.Warn("[%s] create sftp client: %v", config.Host, err)
 					continue
 				}
-				defer sftpClient.Close()
 				// 3.2 List remote directory file information
 				// Parameters read from CLI command FlagRemoteRepo and FlagCurrentLink
 				list, err := sshx.List(sftpClient, command.String(flagx.FlagRemoteRepo), command.String(flagx.FlagCurrentLink))
@@ -55,6 +53,9 @@ func History() *cli.Command {
 						File: fi,
 					})
 				}
+
+				sshClient.Close()
+				sftpClient.Close()
 			}
 
 			// 4. Find versions that exist on all hosts
@@ -90,10 +91,10 @@ func printTable(list []HostFileInfo) {
 	// 3. Iterate through list and add each record to the table
 	for _, fi := range list {
 		tbl.AddLine(
-			fi.Host,                            // Host name
-			fi.File.Path,                       // File path
-			fi.File.Name,                       // File name or version name
-			strconv.FormatBool(fi.File.IsLink), // Whether it is a soft link
+			fi.Host,                                                  // Host name
+			fi.File.Path,                                             // File path
+			fi.File.Name,                                             // File name or version name
+			strconv.FormatBool(fi.File.IsLink),                       // Whether it is a soft link
 			fi.File.FileInfo.ModTime().Format("2006-01-02 15:04:05"), // Modification time
 		)
 	}

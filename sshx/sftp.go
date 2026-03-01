@@ -19,13 +19,15 @@ func OpenSftp(client *ssh.Client) (*sftp.Client, error) {
 
 // IsSymlink determines whether the remote path is a symbolic link
 func IsSymlink(sftpClient *sftp.Client, remotePath string) (bool, error) {
-	// 2. Get file information
+	// 1. Get file information
 	fi, err := sftpClient.Lstat(remotePath)
 	if err != nil {
-		return true, nil
+		if os.IsNotExist(err) {
+			return true, nil
+		}
+		return false, err
 	}
-
-	// 3. Check if it's a symbolic link
+	// 2. Check if it's a symbolic link
 	return fi.Mode()&os.ModeSymlink != 0, nil
 }
 

@@ -48,14 +48,13 @@ func Publish() *cli.Command {
 					logx.Warn("[%s] Failed to open SSH connection: %v", config.Host, err)
 					continue // Current host failed, continue to next host
 				}
-				// Ensure connection is closed to avoid resource leakage
-				defer sshClient.Close()
 				// 5. Execute deployment
 				// Including uploading archive, extracting, executing hooks, updating currentLink
 				if err := depx.PostDeployHost(sshClient, localTarGz, deployConfig); err != nil {
 					logx.Warn("[%s] Deploy failed: %v", config.Host, err)
 					continue // Current host failed, continue to next host
 				}
+				sshClient.Close()
 			}
 			// 6. All hosts deployment completed
 			return nil

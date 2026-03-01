@@ -75,6 +75,7 @@ func ExecuteDeployHooks(sshClient *ssh.Client, config *Config) error {
 		if _, err := sshx.Command(sshClient, fmt.Sprintf("cd %s && %s", config.GetVersionRemoteDir(), hookPre)); err != nil {
 			// Failure only warns, does not block deployment
 			logx.Warn("pre-hook failed: %v", err)
+			return fmt.Errorf("pre-hook failed: %v", err)
 		}
 	}
 
@@ -89,9 +90,9 @@ func ExecuteDeployHooks(sshClient *ssh.Client, config *Config) error {
 		if _, err := sshx.Command(sshClient, fmt.Sprintf("cd %s && %s", config.GetVersionRemoteDir(), hookPost)); err != nil {
 			// Failure only warns, does not block deployment
 			logx.Warn("post-hook: %v", err)
+			return fmt.Errorf("post-hook: %v", err)
 		}
 	}
-
 	return nil
 }
 

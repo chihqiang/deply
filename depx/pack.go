@@ -79,7 +79,6 @@ func PackDir(config *Config) (string, error) {
 			return "", err
 		}
 		relPath, _ := filepath.Rel(config.Dir, filename)
-
 		header, err := tar.FileInfoHeader(info, info.Name())
 		if err != nil {
 			return "", err
@@ -88,13 +87,11 @@ func PackDir(config *Config) (string, error) {
 		if err := tw.WriteHeader(header); err != nil {
 			return "", err
 		}
-
 		if info.Mode().IsRegular() {
 			f, err := os.Open(filename)
 			if err != nil {
 				return "", err
 			}
-			defer f.Close()
 			buf := make([]byte, 32*1024)
 			for {
 				n, err := f.Read(buf)
@@ -112,6 +109,7 @@ func PackDir(config *Config) (string, error) {
 					return "", err
 				}
 			}
+			f.Close()
 		}
 	}
 	return tarPath, nil

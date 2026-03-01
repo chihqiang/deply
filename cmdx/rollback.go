@@ -37,14 +37,11 @@ func Rollback() *cli.Command {
 					logx.Warn("[%s] Failed to open SSH connection: %v", config.Host, err)
 					continue
 				}
-				// Ensure connection is closed when function returns to avoid resource leakage
-				defer sshClient.Close()
 				sftpClient, err := sshx.OpenSftp(sshClient)
 				if err != nil {
 					logx.Warn("[%s] create sftp client: %v", config.Host, err)
 					continue
 				}
-				defer sftpClient.Close()
 				// 3.2 Check if remote version directory exists
 				// If version directory does not exist, rollback is not possible
 				if !sshx.RemoteExists(sftpClient, deployConfig.GetVersionRemoteDir()) {
@@ -59,6 +56,8 @@ func Rollback() *cli.Command {
 					logx.Warn("[%s] rollback failed: %v", config.Host, err)
 					continue
 				}
+				sshClient.Close()
+				sftpClient.Close()
 			}
 
 			// 4. All hosts processing completed

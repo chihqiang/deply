@@ -30,19 +30,19 @@ go build -o deply .
 ### Basic Deployment
 
 ```bash
-deply publish --hosts user@host:22 --dir ./dist --version v1.0.0
+deply publish --hosts root:123456@127.0.0.1:8022 --dir ./dist --version v1.0.0
 ```
 
 ### Using SSH Key
 
 ```bash
-deply publish --hosts user@host:22 --key ~/.ssh/id_rsa
+deply publish --hosts root:123456@127.0.0.1:8022 --key ~/.ssh/id_rsa
 ```
 
 ### Multi-host Deployment
 
 ```bash
-deply publish --hosts user@host1:22,user@host2:22 --dir ./dist
+deply publish --hosts root:123456@127.0.0.1:8022,root:123456@127.0.0.1:8023 --dir ./dist
 ```
 
 ## Commands
@@ -77,7 +77,7 @@ deply publish [options]
 ```bash
 # Deploy dist directory to remote server
 deply publish \
-  --hosts deploy@192.168.1.100:22 \
+  --hosts root:123456@127.0.0.1:8022\
   --dir ./dist \
   --version v1.0.0 \
   --remote-repo /data/app/releases \
@@ -85,7 +85,7 @@ deply publish \
 
 # Use key authentication with post-deployment hook
 deply publish \
-  --hosts deploy@192.168.1.100:22 \
+  --hosts root:123456@127.0.0.1:8022\
   --key ~/.ssh/id_rsa \
   --dir ./dist \
   --hook-post-host "systemctl restart nginx"
@@ -113,7 +113,7 @@ deply rollback [options]
 ```bash
 # Rollback to v1.0.0
 deply rollback \
-  --hosts deploy@192.168.1.100:22 \
+  --hosts root:123456@127.0.0.1:8022\
   --version v1.0.0 \
   --remote-repo /data/app/releases \
   --current-link /data/app/current
@@ -139,7 +139,7 @@ deply history [options]
 
 ```bash
 deply history \
-  --hosts deploy@192.168.1.100:22 \
+  --hosts root:123456@127.0.0.1:8022\
   --remote-repo /data/app/releases \
   --current-link /data/app/current
 ```
@@ -147,10 +147,10 @@ deply history \
 Output example:
 
 ```
-Host             Path                        Version          Current  ModTime
-192.168.1.100    /data/app/releases          v1.0.2           false    2026-03-01 10:30:00
-192.168.1.100    /data/app/releases          v1.0.1           false    2026-02-28 15:20:00
-192.168.1.100    /data/app/releases          v1.0.0           true     2026-02-27 09:10:00
+Host         Path                        Version          Current  ModTime
+127.0.0.1    /data/app/releases          v1.0.2           false    2026-03-01 10:30:00
+127.0.0.1    /data/app/releases          v1.0.1           false    2026-02-28 15:20:00
+127.0.0.1    /data/app/releases          v1.0.0           true     2026-02-27 09:10:00
 ```
 
 ## Deployment Flow
@@ -202,7 +202,7 @@ Directory structure on remote server:
 Simplify commands using environment variables:
 
 ```bash
-export DEPLY_HOSTS="deploy@192.168.1.100:22"
+export DEPLY_HOSTS="root:123456@127.0.0.1:8022"
 export DEPLY_KEY="~/.ssh/id_rsa"
 export DEPLY_HOOK_POST="systemctl restart nginx"
 
