@@ -123,6 +123,9 @@ func ParseSSHURL(raw string) (*Config, error) {
 		// If user is not specified, use current system user
 		if user == "" {
 			user = os.Getenv("USER")
+			if user == "" {
+				return nil, fmt.Errorf("cannot determine username, please specify explicitly")
+			}
 		}
 
 		return &Config{
@@ -145,6 +148,9 @@ func ParseSSHURL(raw string) (*Config, error) {
 	}
 
 	user = os.Getenv("USER")
+	if user == "" {
+		return nil, fmt.Errorf("cannot determine username, please specify explicitly")
+	}
 	return &Config{
 		User: user,
 		Host: host,

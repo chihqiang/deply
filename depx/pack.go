@@ -69,6 +69,11 @@ func PackDir(config *Config) (string, error) {
 		return "", fmt.Errorf("walk directory failed: %w", err)
 	}
 
+	// Check if there are files to pack
+	if len(files) == 0 {
+		return "", fmt.Errorf("no files to pack after applying include/exclude rules")
+	}
+
 	// 2. Create progress bar
 	bar := utilx.NewProgress(totalSize, "Packing")
 	// 3. Write files and update progress bar
@@ -92,6 +97,7 @@ func PackDir(config *Config) (string, error) {
 			if err != nil {
 				return "", err
 			}
+			defer f.Close()
 			buf := make([]byte, 32*1024)
 			for {
 				n, err := f.Read(buf)
@@ -109,7 +115,6 @@ func PackDir(config *Config) (string, error) {
 					return "", err
 				}
 			}
-			f.Close()
 		}
 	}
 	return tarPath, nil

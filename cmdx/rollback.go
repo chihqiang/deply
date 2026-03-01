@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/chihqiang/logx"
 	"github.com/urfave/cli/v3"
 )
 
@@ -18,51 +17,29 @@ func Rollback() *cli.Command {
 		Flags: flagx.VersionFlags(),
 		Action: func(ctx context.Context, command *cli.Command) error {
 			// 1. Load remote host configuration
-			// hostConfig is a slice containing information of all hosts to be deployed (Host, Port, User, Key, etc.)
 			hostConfig, err := sshx.Load(command)
 			if err != nil {
 				return fmt.Errorf("failed to load host config: %v", err)
 			}
 
 			// 2. Load deployment configuration
-			// deployConfig contains version number, directory, hook commands and other information
 			deployConfig := depx.Load(command)
 
-			// 3. Iterate through all remote hosts to perform operations
-			for _, config := range hostConfig {
-				// 3.1 Open SSH connection
-				sshClient, err := sshx.Open(config)
-				if err != nil {
-					// Connection failed, only log and continue to next host
-					logx.Warn("[%s] Failed to open SSH connection: %v", config.Host, err)
-					continue
-				}
-				sftpClient, err := sshx.OpenSftp(sshClient)
-				if err != nil {
-					logx.Warn("[%s] create sftp client: %v", config.Host, err)
-					continue
-				}
-				// 3.2 Check if remote version directory exists
-				// If version directory does not exist, rollback is not possible
+			// 3. Iterate through all remote hosts using common helper
+			sshx.ForEachHostWithSFTP(hostConfig, func(sftpClient *sshx.SFTPClient, sshClient *sshx.SSHClient, config *sshx.Config) error {
+				// 3.1 Check if remote version directory exists
 				if !sshx.RemoteExists(sftpClient, deployConfig.GetVersionRemoteDir()) {
-					logx.Warn("[%s] version not found: %s", config.Host, deployConfig.GetVersionRemoteDir())
-					continue
+					return fmt.Errorf("version not found: %s", deployConfig.GetVersionRemoteDir())
 				}
 
-				// 3.3 Execute deployment hooks (pre/post hooks)
-				// This can be understood as "rollback operation" or redirecting to specified version
+				// 3.2 Execute deployment hooks (pre/post hooks)
 				if err := depx.ExecuteDeployHooks(sshClient, deployConfig); err != nil {
-					// Hook execution failure only logs, continue to next host
-					logx.Warn("[%s] rollback failed: %v", config.Host, err)
-					continue
+					return fmt.Errorf("rollback failed: %v", err)
 				}
-				sshClient.Close()
-				sftpClient.Close()
-			}
+				return nil
+			})
 
-			// 4. All hosts processing completed
 			return nil
-
 		},
 	}
 }

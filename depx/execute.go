@@ -3,9 +3,10 @@ package depx
 import (
 	"chihqiang/deply/sshx"
 	"fmt"
-	"github.com/pkg/sftp"
 	"path"
 	"path/filepath"
+
+	"github.com/pkg/sftp"
 
 	"github.com/chihqiang/logx"
 	"golang.org/x/crypto/ssh"
@@ -70,13 +71,8 @@ func PostDeployHost(sshClient *ssh.Client, localTarGz string, config *Config) er
 // ExecuteDeployHooks executes pre-hook / update currentLink / post-hook
 func ExecuteDeployHooks(sshClient *ssh.Client, config *Config) error {
 	// Pre-deployment hook
-	if hookPre := config.GetHookPre(); hookPre != "" {
-		// cd to version directory to execute pre-hook
-		if _, err := sshx.Command(sshClient, fmt.Sprintf("cd %s && %s", config.GetVersionRemoteDir(), hookPre)); err != nil {
-			// Failure only warns, does not block deployment
-			logx.Warn("pre-hook failed: %v", err)
-			return fmt.Errorf("pre-hook failed: %v", err)
-		}
+	if err := executeHook(sshClient, config, config.GetHookPre(), "pre"); err != nil {
+		return err
 	}
 
 	// Update currentLink to point to new version (atomic operation ln -sfn)
@@ -86,12 +82,21 @@ func ExecuteDeployHooks(sshClient *ssh.Client, config *Config) error {
 	}
 
 	// Post-deployment hook
-	if hookPost := config.GetHookPost(); hookPost != "" {
-		if _, err := sshx.Command(sshClient, fmt.Sprintf("cd %s && %s", config.GetVersionRemoteDir(), hookPost)); err != nil {
-			// Failure only warns, does not block deployment
-			logx.Warn("post-hook: %v", err)
-			return fmt.Errorf("post-hook: %v", err)
-		}
+	if err := executeHook(sshClient, config, config.GetHookPost(), "post"); err != nil {
+		return err
+	}
+	return nil
+}
+
+// executeHook executes a single hook command
+func executeHook(sshClient *ssh.Client, config *Config, hookCmd string, hookName string) error {
+	if hookCmd == "" {
+		return nil
+	}
+	cmd := fmt.Sprintf("cd %s && %s", config.GetVersionRemoteDir(), hookCmd)
+	if _, err := sshx.Command(sshClient, cmd); err != nil {
+		logx.Warn("%s-hook failed: %v", hookName, err)
+		return fmt.Errorf("%s-hook failed: %v", hookName, err)
 	}
 	return nil
 }

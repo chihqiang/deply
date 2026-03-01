@@ -2,10 +2,12 @@ package flagx
 
 import (
 	"fmt"
-	"github.com/urfave/cli/v3"
 	"os"
 	"path"
+	"sync"
 	"time"
+
+	"github.com/urfave/cli/v3"
 )
 
 const (
@@ -42,20 +44,36 @@ const (
 )
 
 var (
-	dir     string
-	baseDir string
+	workDirOnce sync.Once
+	workDir     string
+	baseDir     string
 )
 
-func init() {
-	dir, _ = os.Getwd()
-	baseDir = path.Base(dir)
+// getWorkDir returns the current working directory, initialized only once
+func getWorkDir() string {
+	workDirOnce.Do(func() {
+		var err error
+		workDir, err = os.Getwd()
+		if err != nil {
+			workDir = "."
+		}
+		baseDir = path.Base(workDir)
+	})
+	return workDir
 }
+
+// getBaseDir returns the base name of the current working directory
+func getBaseDir() string {
+	getWorkDir() // ensure initialized
+	return baseDir
+}
+
 func PublishFlags() []cli.Flag {
 	return []cli.Flag{
 		&cli.StringFlag{
 			Name:  FlagDir,
 			Usage: "Local directory or packaged file directory",
-			Value: dir,
+			Value: getWorkDir(),
 		},
 		&cli.StringSliceFlag{
 			Name:  FlagInclude,
@@ -116,12 +134,12 @@ func SSHFlags() []cli.Flag {
 		&cli.StringFlag{
 			Name:  FlagRemoteRepo,
 			Usage: "Remote deployment repository path",
-			Value: fmt.Sprintf(DefaultRemoteRepoPattern, baseDir),
+			Value: fmt.Sprintf(DefaultRemoteRepoPattern, getBaseDir()),
 		},
 		&cli.StringFlag{
 			Name:  FlagCurrentLink,
 			Usage: "Symbolic link path pointing to the current version",
-			Value: fmt.Sprintf(DefaultCurrentLinkPattern, baseDir),
+			Value: fmt.Sprintf(DefaultCurrentLinkPattern, getBaseDir()),
 		},
 	}
 }
